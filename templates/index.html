@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Трекер Техники</title>
+    <!-- Подключаем библиотеку для сканирования -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; width: 100%; }
+        #reader { width: 100%; margin-bottom: 20px; display: none; }
+        .scan-btn { background: #28a745; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+
+<h1>📱 Учет техники</h1>
+
+<!-- Кнопка сканирования -->
+<button class="scan-btn" onclick="startScanner()">📷 Сканировать штрих-код/QR</button>
+<div id="reader"></div>
+
+<form id="techForm" onsubmit="submitForm(event)">
+    <div class="form-group">
+        <label>Штрих-код (автоматически):</label>
+        <input type="text" id="barcode" name="barcode" required readonly placeholder="Нажмите 'Сканировать'">
+    </div>
+    <div class="form-group">
+        <label>Название:</label>
+        <input type="text" name="name" required>
+    </div>
+    <div class="form-group">
+        <label>Категория:</label>
+        <select name="category">
+            <option>Компьютер</option>
+            <option>Телефон</option>
+            <option>Бытовая техника</option>
+            <option>Инструмент</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Статус:</label>
+        <select name="status">
+            <option>В работе</option>
+            <option>В ремонте</option>
+            <option>На складе</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Местоположение:</label>
+        <input type="text" name="location" required>
+    </div>
+    <div class="form-group">
+        <label>Заметки:</label>
+        <textarea name="notes"></textarea>
+    </div>
+    <button type="submit">Сохранить</button>
+</form>
+
+<h2>Список устройств</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Название</th>
+            <th>Код</th>
+            <th>Статус</th>
+            <th>Где</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.name }}</td>
+            <td>{{ item.barcode }}</td>
+            <td>{{ item.status }}</td>
+            <td>{{ item.location }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    let html5QrcodeScanner;
+
+    function startScanner() {
+        document.getElementById('reader').style.display = 'block';
+        html5QrcodeScanner = new Html5Qrcode("reader");
+        
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        
+        html5QrcodeScanner.start(
+            { facingMode: "environment" }, // Использовать заднюю камеру
+            config,
+            onScanSuccess
+        ).catch(err => {
+            alert("Ошибка запуска камеры: " + err);
+        });
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+        // Заполняем поле и останавливаем камеру
+        document.getElementById('barcode').value = decodedText;
+        html5QrcodeScanner.stop().then(() => {
+            document.getElementById('reader').style.display = 'none';
+            alert("Код считан: " + decodedText);
+        }).catch(err => console.log(err));
+    }
+
+    async function submitForm(event) {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        
+        const response = await fetch('/add/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        if (result.error) {
+            alert(result.error);
+        } else {
+            alert("Устройство добавлено!");
+            location.reload(); // Перезагрузить страницу для обновления списка
+        }
+    }
+</script>
+
+</body>
+</html>
