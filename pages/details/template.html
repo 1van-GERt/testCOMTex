@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}{{ item.name }} - COMTex{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="/static/details/style.css">{% endblock %}
+
+{% block content %}
+<!-- Основная сетка страницы -->
+<div class="details-grid">
+    
+    <!-- ЛЕВАЯ КОЛОНКА: Фото и основные идентификаторы -->
+    <div class="left-col">
+        <!-- Блок с фотографией -->
+        <div class="card photo-card">
+            {% if item.photo_filename %}
+                <img src="/uploads/{{ item.photo_filename }}" alt="{{ item.name }}">
+            {% else %}
+                <div class="no-photo">
+                    <span style="font-size: 40px; display:block; margin-bottom:10px;">📷</span>
+                    Нет фотографии
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Блок с категорией и номерами -->
+        <div class="card info-card-ids">
+            <h3 style="margin-top:0; color:#555; border-bottom:2px solid #eee; padding-bottom:10px; font-size:14px; text-transform:uppercase; letter-spacing:1px;">Идентификаторы</h3>
+            
+            <div class="prop-row">
+                <span class="prop-label">Категория</span>
+                <span class="prop-value badge badge-cat">{{ item.category }}</span>
+            </div>
+            
+            <div class="prop-row">
+                <span class="prop-label">Инв. номер</span>
+                <span class="prop-value code">{{ item.inv_number or '—' }}</span>
+            </div>
+            
+            <div class="prop-row">
+                <span class="prop-label">Серийный номер</span>
+                <span class="prop-value code">{{ item.serial_number or '—' }}</span>
+            </div>
+
+            <div class="prop-row" style="border:none; margin-top:15px; background:#fff3e0; padding:10px; border-radius:6px;">
+                <span class="prop-label" style="color:#ef6c00;">Штрих-код</span>
+                <span class="prop-value code" style="font-size:1.1em; color:#d32f2f; font-weight:bold;">{{ item.barcode }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ПРАВАЯ КОЛОНКА: Свойства, статус и действия -->
+    <div class="right-col">
+        <div class="card info-card-main">
+            <h1 style="margin-top:0; color:#3f51b5; font-size:28px;">{{ item.name }}</h1>
+            
+            <!-- Блок статуса -->
+            <div class="status-block">
+                <span class="prop-label" style="display:block; margin-bottom:5px; font-size:12px;">Текущий статус:</span>
+                <span class="badge badge-{{ item.status|replace(' ', '-')|lower }}" style="font-size:1.2em; padding:8px 16px; display:inline-block;">
+                    {{ item.status }}
+                </span>
+            </div>
+
+            <!-- Динамический блок информации о выдаче (только если статус "В работе") -->
+            {% if item.status == 'В работе' %}
+            <div class="work-info-block">
+                <h3 style="color:#1565c0; margin:0 0 15px 0; font-size:16px; display:flex; align-items:center;">
+                    <span style="margin-right:8px;">🚀</span> Информация о выдаче
+                </h3>
+                <div class="prop-row"><span class="prop-label">Кому выдал:</span><span class="prop-value">{{ item.issued_to or '—' }}</span></div>
+                <div class="prop-row"><span class="prop-label">Кто выдал:</span><span class="prop-value">{{ item.issued_by or '—' }}</span></div>
+                <div class="prop-row"><span class="prop-label">Дата выдачи:</span><span class="prop-value">{{ format_date(item.issue_time) }}</span></div>
+                <div class="prop-row"><span class="prop-label">Вернуть до:</span><span class="prop-value" style="color:#d32f2f; font-weight:bold;">{{ format_date(item.return_deadline) }}</span></div>
+                <div class="prop-row" style="border:none;"><span class="prop-label">Место работы:</span><span class="prop-value">{{ item.work_location or '—' }}</span></div>
+            </div>
+            {% endif %}
+
+            <!-- Блок заметок -->
+            <div class="notes-block">
+                <h3 style="color:#555; margin:0 0 10px 0; font-size:16px; display:flex; align-items:center;">
+                    <span style="margin-right:8px;">📝</span> Заметки
+                </h3>
+                <p style="background:#f9f9f9; padding:15px; border-radius:6px; color:#444; line-height:1.6; margin:0; white-space: pre-wrap;">
+                    {{ item.notes if item.notes else 'Нет заметок' }}
+                </p>
+            </div>
+
+            <!-- Кнопки действий -->
+            <div class="actions-block">
+                <button class="btn btn-primary" onclick="toggleEdit()">✏️ Редактировать</button>
+                <form action="/delete/{{ item.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Вы уверены? Это действие нельзя отменить.')">
+                    <button type="submit" class="btn btn-danger">🗑️ Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Форма редактирования (Скрыта по умолчанию, появляется при нажатии кнопки) -->
+<div id="editForm" class="card" style="display:none; margin-top:20px; border:2px solid #3f51b5;">
+    <h2 style="margin-top:0; color:#3f51b5;">Редактирование устройства</h2>
+    <form action="/edit/{{ item.id }}" method="POST" enctype="multipart/form-data">
+        
+        <div class="form-grid">
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Название *</label>
+                <input type="text" name="name" value="{{ item.name }}" class="input-field" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Штрих-код *</label>
+                <input type="text" name="barcode" value="{{ item.barcode }}" class="input-field" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Категория *</label>
+                <select name="category" class="input-field">
+                    <option {% if item.category=='Управление' %}selected{% endif %}>Управление</option>
+                    <option {% if item.category=='Периферия' %}selected{% endif %}>Периферия</option>
+                    <option {% if item.category=='Модули' %}selected{% endif %}>Модули</option>
+                    <option {% if item.category=='Железо' %}selected{% endif %}>Железо</option>
+                    <option {% if item.category=='Разное' %}selected{% endif %}>Разное</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Статус *</label>
+                <select name="status" id="editStatus" class="input-field" onchange="toggleWorkFields(this)">
+                    <option {% if item.status=='Склад' %}selected{% endif %}>Склад</option>
+                    <option {% if item.status=='В работе' %}selected{% endif %}>В работе</option>
+                    <option {% if item.status=='Ремонт' %}selected{% endif %}>Ремонт</option>
+                    <option {% if item.status=='Е45' %}selected{% endif %}>Е45</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Инв. номер</label>
+                <input type="text" name="inv_number" value="{{ item.inv_number }}" class="input-field">
+            </div>
+
+            <div class="form-group">
+                <label>Серийный номер</label>
+                <input type="text" name="serial_number" value="{{ item.serial_number }}" class="input-field">
+            </div>
+        </div>
+
+        <!-- Скрытые поля выдачи (появляются только если выбран статус "В работе") -->
+        <div id="editWorkFields" style="display:{% if item.status == 'В работе' %}block{% else %}none{% endif %}; background:#e3f2fd; padding:20px; margin:20px 0; border-radius:8px; border:1px solid #90caf9;">
+            <h4 style="margin:0 0 15px 0; color:#1565c0; font-size:16px;">⚙️ Детали выдачи</h4>
+            <div class="form-grid">
+                <div class="form-group"><label>Кому выдал</label><input type="text" name="issued_to" value="{{ item.issued_to }}" class="input-field"></div>
+                <div class="form-group"><label>Кто выдал</label><input type="text" name="issued_by" value="{{ item.issued_by }}" class="input-field"></div>
+                <div class="form-group"><label>Вернуть до</label><input type="datetime-local" name="return_deadline" value="{{ item.return_deadline.strftime('%Y-%m-%dT%H:%M') if item.return_deadline else '' }}" class="input-field"></div>
+                <div class="form-group"><label>Место работы</label><input type="text" name="work_location" value="{{ item.work_location }}" class="input-field"></div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Заметки</label>
+            <textarea name="notes" rows="4" class="input-field">{{ item.notes }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>Фотография</label>
+            {% if item.photo_filename %}
+            <div style="margin-bottom:15px; padding:10px; background:#f5f5f5; border-radius:6px; display:inline-block;">
+                <img src="/uploads/{{ item.photo_filename }}" style="height:80px; border-radius:4px; margin-right:15px; vertical-align:middle; box-shadow:0 1px 3px rgba(0,0,0,0.2);">
+                <label style="vertical-align:middle; cursor:pointer; color:#d32f2f;">
+                    <input type="checkbox" name="remove_photo" style="margin-right:5px;"> Удалить текущее фото
+                </label>
+            </div>
+            {% endif %}
+            <input type="file" name="photo" accept="image/*" class="input-field">
+            <small style="color:#777;">Загрузите новое фото, чтобы заменить старое.</small>
+        </div>
+
+        <div style="text-align:right; margin-top:25px; padding-top:20px; border-top:1px solid #eee;">
+            <button type="button" class="btn" onclick="toggleEdit()" style="background:#ccc; color:#333; margin-right:10px;">Отмена</button>
+            <button type="submit" class="btn btn-primary">💾 Сохранить изменения</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/details/script.js"></script>
+{% endblock %}

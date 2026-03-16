@@ -1,0 +1,14 @@
+.tech-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+.tech-controls { display: flex; gap: 10px; }
+.search-form { display: flex; gap: 5px; }
+.input-field { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px; box-sizing: border-box; }
+.form-group { margin-bottom: 15px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+th { background: #fafafa; cursor: pointer; user-select: none; }
+th:hover { background: #f0f0f0; }
+.badge { padding: 5px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+.badge-склад { background: #eceff1; color: #546e7a; }
+.badge-в-работе { background: #fff3e0; color: #ef6c00; }
+.badge-ремонт { background: #ffebee; color: #c62828; }
+.badge-е45 { background: #e3f2fd; color: #1565c0; }

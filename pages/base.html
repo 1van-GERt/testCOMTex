@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}COMTex{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #3f51b5; --accent: #ff4081; --bg: #f4f6f8; --sidebar-w: 250px; --text: #333; }
+        body { margin: 0; font-family: 'Roboto', sans-serif; background: var(--bg); display: flex; min-height: 100vh; }
+        .sidebar { width: var(--sidebar-w); background: white; box-shadow: 2px 0 5px rgba(0,0,0,0.05); position: fixed; height: 100%; display: flex; flex-direction: column; z-index: 100; }
+        .logo { padding: 24px; font-size: 24px; font-weight: 700; color: var(--primary); letter-spacing: 1px; border-bottom: 1px solid #eee; }
+        .nav-links { list-style: none; padding: 0; margin: 20px 0; }
+        .nav-links li a { display: block; padding: 15px 24px; color: #666; text-decoration: none; font-weight: 500; transition: 0.2s; border-left: 4px solid transparent; }
+        .nav-links li a:hover { background: #f0f2f5; color: var(--primary); }
+        .nav-links li a.active { background: #e8eaf6; color: var(--primary); border-left-color: var(--primary); }
+        .main-content { margin-left: var(--sidebar-w); flex: 1; padding: 30px; width: calc(100% - var(--sidebar-w)); }
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding: 24px; margin-bottom: 20px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; text-decoration: none; display: inline-block; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #303f9f; }
+        .btn-danger { background: #d32f2f; color: white; }
+        @media (max-width: 768px) {
+            .sidebar { width: 70px; }
+            .logo span, .nav-links li a span { display: none; }
+            .nav-links li a { text-align: center; padding: 15px 0; }
+            .main-content { margin-left: 70px; width: calc(100% - 70px); }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+<nav class="sidebar">
+    <div class="logo"><span>COM</span>Tex</div>
+    <ul class="nav-links">
+        <li><a href="/" class="{% if request.url.path == '/' %}active{% endif %}">🏠 <span>Главная</span></a></li>
+        <li><a href="/tech" class="{% if 'tech' in request.url.path %}active{% endif %}">💻 <span>Техника</span></a></li>
+        <li><a href="/issue" class="{% if 'issue' in request.url.path %}active{% endif %}">📦 <span>Выдача</span></a></li>
+        <li><a href="/calendar" class="{% if 'calendar' in request.url.path %}active{% endif %}">📅 <span>Календарь</span></a></li>
+    </ul>
+</nav>
+<div class="main-content">
+    {% block content %}{% endblock %}
+</div>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

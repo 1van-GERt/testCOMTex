@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Главная - COMTex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container { max-width: 1000px; margin: 0 auto; }
+    .welcome-block { text-align: center; margin-bottom: 40px; padding-top: 20px; }
+    .welcome-block h1 { font-size: 3rem; color: #3f51b5; margin: 0; font-weight: 300; letter-spacing: 2px; }
+    .welcome-block p { color: #777; font-size: 1.2rem; margin-top: 10px; }
+    
+    /* Сетка статистики */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; margin-bottom: 40px; }
+    .stat-card { background: white; padding: 30px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); text-align: center; border-top: 5px solid #ddd; transition: transform 0.2s, box-shadow 0.2s; }
+    .stat-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+    .stat-card.work { border-top-color: #ff9800; }
+    .stat-card.repair { border-top-color: #f44336; }
+    .stat-card.total { border-top-color: #3f51b5; }
+    
+    .stat-number { font-size: 3.5rem; font-weight: 800; color: #333; margin: 15px 0 5px; line-height: 1; }
+    .stat-label { text-transform: uppercase; letter-spacing: 1.5px; color: #777; font-size: 0.85rem; font-weight: 700; }
+    
+    .btn-link { display: inline-block; margin-top: 15px; text-decoration: none; color: #3f51b5; font-weight: 600; font-size: 0.9rem; transition: color 0.2s; }
+    .btn-link:hover { color: #1a237e; text-decoration: underline; }
+    
+    /* Блок возвратов */
+    .returns-section { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); padding: 30px; }
+    .section-title { font-size: 1.4rem; color: #333; margin: 0 0 25px 0; display: flex; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }
+    .section-title span { margin-right: 12px; font-size: 1.6rem; }
+    
+    .return-item { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-radius: 10px; margin-bottom: 15px; border-left: 6px solid #ddd; transition: all 0.2s; }
+    .return-item.urgent { background: #ffebee; border-left-color: #f44336; }
+    .return-item.soon { background: #e3f2fd; border-left-color: #2196f3; }
+    
+    .return-info strong { display: block; font-size: 1.2rem; color: #333; margin-bottom: 6px; }
+    .return-info small { color: #666; font-size: 0.95rem; }
+    
+    .return-date { text-align: right; min-width: 140px; }
+    .date-val { font-size: 1.3rem; font-weight: 800; display: block; line-height: 1.2; }
+    .urgent .date-val { color: #d32f2f; }
+    .soon .date-val { color: #1976d2; }
+    
+    .date-label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-top: 4px; display: block; }
+    .urgent .date-label { color: #d32f2f; }
+    
+    .no-returns { text-align: center; color: #999; padding: 40px 20px; background: #fafafa; border-radius: 8px; font-style: italic; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    
+    <div class="welcome-block">
+        <h1>COMTex</h1>
+        <p>Панель управления техникой</p>
+    </div>
+
+    <!-- Карточки статистики -->
+    <div class="stats-grid">
+        <div class="stat-card work">
+            <div class="stat-label">В работе</div>
+            <div class="stat-number">{{ count_work }}</div>
+            <a href="/tech?search=&sort_by=status&sort_order=asc" class="btn-link">Посмотреть список →</a>
+        </div>
+        
+        <div class="stat-card repair">
+            <div class="stat-label">В ремонте</div>
+            <div class="stat-number">{{ count_repair }}</div>
+            <a href="/tech?search=Ремонт&sort_by=status&sort_order=asc" class="btn-link">Посмотреть список →</a>
+        </div>
+        
+        <div class="stat-card total">
+            <div class="stat-label">Всего техники</div>
+            <div class="stat-number">{{ count_total }}</div>
+            <a href="/tech" class="btn-link">Весь реестр →</a>
+        </div>
+    </div>
+
+    <!-- Блок ближайших возвратов -->
+    <!-- Блок ближайших возвратов -->
+    <div class="returns-section">
+        <h2 class="section-title"><span>📅</span> Ближайшие возвраты</h2>
+        
+        {% if returns_list %}
+            <!-- Контейнер для списка (максимум 3 элемента) -->
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                {% for ret in returns_list %}
+                <a href="/item/{{ ret.item.id }}" style="text-decoration: none; color: inherit;">
+                    <div class="return-item {{ ret.class_name }}">
+                        <div class="return-info">
+                            <strong>{{ ret.item.name }}</strong>
+                            <small>
+                                Выдано: {{ ret.item.issued_to or 'Не указано' }} 
+                                {% if ret.item.work_location %} ({{ ret.item.work_location }}){% endif %}
+                            </small>
+                        </div>
+                        <div class="return-date">
+                            <span class="date-val">{{ format_date(ret.item.return_deadline) }}</span>
+                            {% if ret.is_urgent %}
+                                <span class="date-label">⚠️ ПРОСРОЧЕНО</span>
+                            {% else %}
+                                <span class="date-label">Дата возврата</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            
+            <div style="text-align: right; margin-top: 20px;">
+                <a href="/calendar" class="btn-link">Открыть полный календарь →</a>
+            </div>
+        {% else %}
+            <div class="no-returns">
+                На данный момент нет активных выдач с установленной датой возврата.<br>
+                Вся техника находится на складе или в ремонте.
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

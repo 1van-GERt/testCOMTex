@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Оформление выдачи - COMTex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .issue-container { max-width: 1200px; margin: 0 auto; }
+    .section-card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 25px; margin-bottom: 25px; }
+    .section-title { font-size: 1.3rem; color: #333; margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; display: flex; align-items: center; }
+    .section-title span { margin-right: 10px; font-size: 1.5rem; }
+    .issue-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #555; font-size: 0.9rem; }
+    .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+    .form-control:focus { border-color: #3f51b5; outline: none; }
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: #fafafa; color: #555; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
+    #selected-table tbody tr { background: #e3f2fd; transition: background 0.2s; }
+    #selected-table tbody tr:hover { background: #bbdefb; }
+    .remove-btn { color: #d32f2f; cursor: pointer; font-weight: bold; border: none; background: none; font-size: 1.2rem; }
+    #available-table tbody tr { cursor: pointer; transition: background 0.2s; }
+    #available-table tbody tr:hover { background: #f5f5f5; }
+    #available-table tbody tr.selected { background: #c8e6c9 !important; opacity: 0.6; pointer-events: none; }
+    .action-bar { text-align: right; margin-top: 20px; padding-top: 20px; border-top: 2px solid #eee; }
+    .btn-issue { background: #2e7d32; color: white; padding: 12px 30px; font-size: 16px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 6px rgba(46, 125, 50, 0.3); }
+    .btn-issue:hover { background: #1b5e20; transform: translateY(-2px); }
+    .btn-issue:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
+    .empty-msg { text-align: center; color: #999; padding: 20px; font-style: italic; }
+    .alert-success { background: #d4edda; color: #155724; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #c3e6cb; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="issue-container">
+    <h1 style="margin-bottom: 30px;">📦 Оформление выдачи техники</h1>
+
+    {% if request.query_params.get('success') == 'true' %}
+    <div class="alert-success">
+        ✅ Успешно! Выдано устройств: <strong>{{ request.query_params.get('count') }}</strong>.
+        <a href="/issue" style="color:#155724; text-decoration:underline; margin-left:10px;">Оформить еще одну выдачу</a>
+    </div>
+    {% endif %}
+
+    <form action="/issue/process" method="POST" id="issueForm">
+        <!-- 1. Данные о выдаче -->
+        <div class="section-card">
+            <h2 class="section-title"><span>📝</span> Данные о выдаче</h2>
+            <div class="issue-form-grid">
+                <div class="form-group"><label>Кому выдал *</label><input type="text" name="issued_to" class="form-control" required placeholder="ФИО сотрудника"></div>
+                <div class="form-group"><label>Кто выдал *</label><input type="text" name="issued_by" class="form-control" required placeholder="ФИО кладовщика"></div>
+                <div class="form-group"><label>Дата выдачи *</label><input type="datetime-local" name="issue_time" class="form-control" required></div>
+                <div class="form-group"><label>Вернуть до *</label><input type="datetime-local" name="return_deadline" class="form-control" required></div>
+                <div class="form-group" style="grid-column: 1 / -1;"><label>Место работы *</label><input type="text" name="work_location" class="form-control" required placeholder="Например: Офис Москва"></div>
+            </div>
+        </div>
+
+        <input type="hidden" name="item_ids" id="hiddenItemIds" value="">
+
+        <!-- 2. Список выбранного -->
+        <div class="section-card">
+            <h2 class="section-title"><span>🛒</span> Список к выдаче (<span id="countSelected">0</span>)</h2>
+            <div class="table-responsive">
+                <table id="selected-table">
+                    <thead><tr><th>Название</th><th>Категория</th><th>Инв. номер</th><th>Штрих-код</th><th style="width: 50px;">Удалить</th></tr></thead>
+                    <tbody id="selected-body"><tr><td colspan="5" class="empty-msg">Список пуст. Выберите технику ниже.</td></tr></tbody>
+                </table>
+            </div>
+            <div class="action-bar"><button type="submit" class="btn-issue" id="submitBtn" disabled>✅ Оформить выдачу</button></div>
+        </div>
+    </form>
+
+    <!-- 3. Доступная техника -->
+    <div class="section-card">
+        <h2 class="section-title"><span>🏭</span> Доступная техника на складе (нажмите для добавления)</h2>
+        <div class="table-responsive">
+            <table id="available-table">
+                <thead><tr><th>Название</th><th>Категория</th><th>Инв. номер</th><th>Серийный номер</th><th>Штрих-код</th></tr></thead>
+                <tbody>
+                    {% for item in available_items %}
+                    <tr onclick="addToIssue({{ item.id }}, '{{ item.name }}', '{{ item.category }}', '{{ item.inv_number or '-' }}', '{{ item.barcode }}')">
+                        <td><strong>{{ item.name }}</strong></td><td>{{ item.category }}</td><td>{{ item.inv_number or '-' }}</td><td>{{ item.serial_number or '-' }}</td><td><code>{{ item.barcode }}</code></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="empty-msg">На складе нет доступной техники.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let selectedItems = {};
+    document.addEventListener('DOMContentLoaded', () => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const isoString = now.toISOString().slice(0, 16);
+        const issueTimeInput = document.querySelector('input[name="issue_time"]');
+        const returnDeadlineInput = document.querySelector('input[name="return_deadline"]');
+        if(issueTimeInput) issueTimeInput.value = isoString;
+        if(returnDeadlineInput) {
+            const nextWeek = new Date(now);
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            returnDeadlineInput.value = nextWeek.toISOString().slice(0, 16);
+        }
+    });
+
+    function addToIssue(id, name, category, inv, barcode) {
+        if (selectedItems[id]) return;
+        selectedItems[id] = { name, category, inv, barcode };
+        renderSelectedTable();
+        event.currentTarget.classList.add('selected');
+    }
+
+    function removeFromIssue(id) {
+        delete selectedItems[id];
+        renderSelectedTable();
+        const rows = document.querySelectorAll('#available-table tbody tr');
+        rows.forEach(row => {
+            if (row.getAttribute('onclick').includes(`(${id},`)) row.classList.remove('selected');
+        });
+    }
+
+    function renderSelectedTable() {
+        const tbody = document.getElementById('selected-body');
+        const countSpan = document.getElementById('countSelected');
+        const hiddenInput = document.getElementById('hiddenItemIds');
+        const submitBtn = document.getElementById('submitBtn');
+        tbody.innerHTML = '';
+        const ids = Object.keys(selectedItems);
+        countSpan.textContent = ids.length;
+        hiddenInput.value = ids.join(',');
+        if (ids.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">Список пуст.</td></tr>';
+            submitBtn.disabled = true;
+            return;
+        }
+        submitBtn.disabled = false;
+        ids.forEach(id => {
+            const item = selectedItems[id];
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><strong>${item.name}</strong></td><td>${item.category}</td><td>${item.inv}</td><td><code>${item.barcode}</code></td><td><button type="button" class="remove-btn" onclick="removeFromIssue(${id})">&times;</button></td>`;
+            tbody.appendChild(tr);
+        });
+    }
+</script>
+{% endblock %}

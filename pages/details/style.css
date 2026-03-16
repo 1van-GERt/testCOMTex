@@ -1,0 +1,51 @@
+.details-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 25px;
+    align-items: start;
+}
+@media (max-width: 900px) { .details-grid { grid-template-columns: 1fr; } }
+
+.card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 24px; margin-bottom: 20px; border: 1px solid #f0f0f0; }
+
+/* Левая колонка */
+.photo-card { padding: 15px; text-align: center; background: #fafafa; }
+.photo-card img { width: 100%; height: auto; border-radius: 6px; object-fit: cover; max-height: 400px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.no-photo { background: #eee; height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999; border-radius: 6px; font-size: 14px; }
+
+.info-card-ids h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1.2px; color: #777; margin-top: 0; border-bottom: 2px solid #f0f0f0; padding-bottom: 12px; }
+.prop-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #f5f5f5; }
+.prop-row:last-child { border-bottom: none; }
+.prop-label { color: #888; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.prop-value { font-weight: 600; color: #333; text-align: right; font-size: 15px; }
+.prop-value.code { font-family: 'Consolas', monospace; background: #f5f5f5; padding: 6px 10px; border-radius: 4px; font-size: 13px; color: #d32f2f; border: 1px solid #e0e0e0; }
+
+/* Правая колонка */
+.info-card-main h1 { font-size: 26px; margin: 0 0 15px 0; color: #3f51b5; line-height: 1.3; }
+.status-block { margin-bottom: 25px; padding: 12px 16px; background: #f9f9f9; border-radius: 6px; display: inline-block; border: 1px solid #eee; }
+.work-info-block { background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 5px solid #2196f3; }
+.work-info-block h3 { margin: 0 0 15px 0; color: #1565c0; font-size: 16px; display: flex; align-items: center; }
+.notes-block { margin-top: 25px; }
+.notes-block h3 { color: #555; margin: 0 0 12px 0; font-size: 16px; display: flex; align-items: center; }
+.notes-block p { background: #fafafa; padding: 15px; border-radius: 6px; color: #444; line-height: 1.6; margin: 0; white-space: pre-wrap; border: 1px solid #eee; }
+.actions-block { margin-top: 30px; display: flex; gap: 15px; padding-top: 25px; border-top: 1px solid #eee; }
+
+/* Бейджи */
+.badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; }
+.badge-cat { background: #e0e0e0; color: #424242; }
+.badge-склад { background: #eceff1; color: #546e7a; }
+.badge-в-работе { background: #fff3e0; color: #ef6c00; }
+.badge-ремонт { background: #ffebee; color: #c62828; }
+.badge-е45 { background: #e3f2fd; color: #1565c0; }
+.badge-иное { background: #fafafa; color: #616161; border: 1px solid #ddd; }
+
+/* Форма */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+.input-field { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin-top: 6px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
+.input-field:focus { outline: none; border-color: #3f51b5; }
+.btn { padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-block; transition: all 0.2s; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+.btn-primary { background: #3f51b5; color: white; }
+.btn-primary:hover { background: #303f9f; }
+.btn-danger { background: #d32f2f; color: white; }
+.btn-danger:hover { background: #b71c1c; }

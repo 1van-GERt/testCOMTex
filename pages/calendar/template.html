@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Календарь возвратов - COMTex{% endblock %}
+
+{% block extra_css %}
+<!-- Подключаем стили FullCalendar -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
+<style>
+    #calendar-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    #calendar { max-width: 1100px; margin: 0 auto; min-height: 80vh; }
+    
+    /* Кастомизация событий */
+    .fc-event { cursor: pointer; border: none; font-weight: 600; padding: 2px 4px; border-radius: 4px; }
+    .fc-event:hover { opacity: 0.8; }
+    
+    /* Стили для всплывающего окна (Popover) */
+    .fc-popover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: none; border-radius: 8px; overflow: hidden; }
+    .fc-popover-header { background: #f5f5f5; padding: 10px 15px; font-weight: bold; color: #333; }
+    .fc-popover-body { padding: 0; }
+    .event-list-item { padding: 10px 15px; border-bottom: 1px solid #eee; transition: background 0.2s; }
+    .event-list-item:hover { background: #f9f9f9; }
+    .event-list-item:last-child { border-bottom: none; }
+    .event-title { font-weight: 600; color: #333; display: block; margin-bottom: 4px; }
+    .event-meta { font-size: 12px; color: #777; }
+    
+    /* Адаптивность */
+    @media (max-width: 600px) {
+        #calendar { font-size: 12px; }
+        .fc-toolbar-title { font-size: 1.2rem !important; }
+        .fc-button { padding: 0.4em 0.65em !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <h1 style="margin:0;">📅 Календарь возвратов</h1>
+    <div style="color:#666; font-size:0.9rem;">
+        <span style="display:inline-block; width:12px; height:12px; background:#2196f3; border-radius:50%; margin-right:5px;"></span>План
+        <span style="display:inline-block; width:12px; height:12px; background:#d32f2f; border-radius:50%; margin-left:10px; margin-right:5px;"></span>Просрочено
+    </div>
+</div>
+
+<div id="calendar-container">
+    <div id="calendar"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Подключаем JS FullCalendar и русскую локаль -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales/ru.global.min.js'></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth', // Вид по умолчанию: Месяц
+        locale: 'ru',               // Русский язык
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listYear' // Кнопки переключения
+        },
+        buttonText: {
+            today: 'Сегодня',
+            month: 'Месяц',
+            week: 'Неделя',
+            day: 'День',
+            list: 'Список'
+        },
+        events: '/api/calendar-events', // Загружаем события с нашего сервера
+        
+        // Настройка всплывающего окна при клике на день с несколькими событиями
+        dayMaxEvents: true, 
+        moreLinkText: 'ещё',
+        
+        // Обработка клика на событие (переход на страницу детали)
+        eventClick: function(info) {
+            info.jsEvent.preventDefault(); // Отменяем стандартный переход сразу
+            if (info.event.url) {
+                window.location.href = info.event.url;
+            }
+        },
+
+        // Кастомное отображение списка событий во всплывающем окне
+        eventContent: function(arg) {
+            let element = document.createElement('div');
+            element.innerHTML = `<span>${arg.timeText} ${arg.event.title}</span>`;
+            return { domNodes: [element] };
+        }
+    });
+
+    calendar.render();
+});
+</script>
+{% endblock %}

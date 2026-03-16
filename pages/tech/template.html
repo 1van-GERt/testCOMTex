@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+<!-- ИСПРАВЛЕНИЕ ЗДЕСЬ: Убрали item.name, так как на странице списка нет одного элемента -->
+{% block title %}Техника - COMTex{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="/static/tech/style.css">{% endblock %}
+
+{% block content %}
+<div class="tech-header">
+    <h1>Список техники</h1>
+    <div class="tech-controls">
+        <form action="/tech" method="GET" class="search-form">
+            <input type="text" name="search" placeholder="Поиск (название, категория)..." value="{{ current_search }}">
+            <button type="submit" class="btn btn-primary">🔍</button>
+        </form>
+        
+        <!-- Кнопка Экспорта -->
+        <a href="/tech/export/excel" class="btn" style="background-color: #2e7d32; color: white; margin-right: 10px;">
+            📥 Экспорт в Excel
+        </a>
+        
+        <a href="#addModal" onclick="document.getElementById('addModal').style.display='block'" class="btn btn-primary">
+            + Добавить
+        </a>
+    </div>
+</div>
+
+<div class="card table-card">
+    <table>
+        <thead>
+            <tr>
+                <th onclick="location.href='/tech?sort_by=name&sort_order={{ 'desc' if sort_by=='name' and sort_order=='asc' else 'asc' }}'">
+                    Название {% if sort_by=='name' %}{{ '↑' if sort_order=='asc' else '↓' }}{% endif %}
+                </th>
+                <th onclick="location.href='/tech?sort_by=status&sort_order={{ 'desc' if sort_by=='status' and sort_order=='asc' else 'asc' }}'">
+                    Статус {% if sort_by=='status' %}{{ '↑' if sort_order=='asc' else '↓' }}{% endif %}
+                </th>
+                <th onclick="location.href='/tech?sort_by=category&sort_order={{ 'desc' if sort_by=='category' and sort_order=='asc' else 'asc' }}'">
+                    Категория {% if sort_by=='category' %}{{ '↑' if sort_order=='asc' else '↓' }}{% endif %}
+                </th>
+                <th onclick="location.href='/tech?sort_by=return_deadline&sort_order={{ 'desc' if sort_by=='return_deadline' and sort_order=='asc' else 'asc' }}'">
+                    Дата возврата {% if sort_by=='return_deadline' %}{{ '↑' if sort_order=='asc' else '↓' }}{% endif %}
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr onclick="window.location.href='/item/{{ item.id }}'" style="cursor:pointer">
+                <td><strong>{{ item.name }}</strong></td>
+                <td>
+                    <span class="badge badge-{{ item.status|replace(' ', '-')|lower }}">{{ item.status }}</span>
+                </td>
+                <td>{{ item.category }}</td>
+                <td>{{ format_date(item.return_deadline) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="text-align:center; padding: 20px;">Техника не найдена</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Модальное окно добавления -->
+<div id="addModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:200;">
+    <div style="background:white; margin: 5% auto; padding: 20px; width: 90%; max-width: 600px; border-radius: 8px; max-height: 90vh; overflow-y: auto;">
+        <h2 style="margin-top:0;">Добавить технику</h2>
+        
+        <form action="/add/" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Название *</label>
+                <input type="text" name="name" required class="input-field" placeholder="Например: Ноутбук Dell">
+            </div>
+
+            <div class="form-group">
+                <label>Штрих-код *</label>
+                <input type="text" name="barcode" required class="input-field" placeholder="Сканируйте или введите код">
+            </div>
+
+            <div class="form-group">
+                <label>Категория *</label>
+                <select name="category" required class="input-field">
+                    <option value="" disabled selected>Выберите категорию</option>
+                    <option value="Управление">Управление</option>
+                    <option value="Периферия">Периферия</option>
+                    <option value="Модули">Модули</option>
+                    <option value="Железо">Железо</option>
+                    <option value="Разное">Разное</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Статус *</label>
+                <select name="status" required class="input-field" onchange="toggleWorkFields(this)">
+                    <option value="" disabled selected>Выберите статус</option>
+                    <option value="Склад">Склад</option>
+                    <option value="В работе">В работе</option>
+                    <option value="Ремонт">Ремонт</option>
+                    <option value="Е45">Е45</option>
+                </select>
+            </div>
+            
+            <div id="workFields" style="display:none; background:#f0f7ff; padding:15px; margin-bottom:15px; border-radius:6px; border:1px solid #bbdefb;">
+                <h4 style="margin:0 0 10px 0; color:#1565c0;">Детали выдачи</h4>
+                <div class="form-group"><label>Кому выдал</label><input type="text" name="issued_to" class="input-field" placeholder="ФИО"></div>
+                <div class="form-group"><label>Вернуть до</label><input type="datetime-local" name="return_deadline" class="input-field"></div>
+                <div class="form-group"><label>Место работы</label><input type="text" name="work_location" class="input-field"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Фотография</label>
+                <input type="file" name="photo" accept="image/*" class="input-field">
+            </div>
+            
+            <div style="text-align:right; margin-top:20px; border-top:1px solid #eee; padding-top:15px;">
+                <button type="button" class="btn" style="background:#ccc; color:#333;" onclick="document.getElementById('addModal').style.display='none'">Отмена</button>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/tech/script.js"></script>
+{% endblock %}
